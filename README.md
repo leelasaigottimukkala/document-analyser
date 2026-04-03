@@ -62,10 +62,20 @@ Amounts: Currency symbol detection (₹, $, USD, INR).
 
 Sentiment: A statistical scoring engine that weights positive vs. negative tokens to classify the document tone.
 
-📂 API Usage (Requirement 7)
+📂 API Usage 
 Authentication
 Requests must include the following header:
 x-api-key: sk_track2_987654321
+
+---
+
+## 🤖 AI Tools Used
+In compliance with the hackathon policy, the following AI tools were utilized during development:
+- **Google Gemini:** Assisted in architecting the FastAPI request/response models and refining the Regular Expression (Regex) patterns for entity extraction.
+- **ChatGPT:** Used for formatting documentation and generating boilerplate setup instructions for the README.
+- **Local NLP Logic:** While the code was co-authored with AI assistance, the final sentiment and extraction logic were implemented as a local "Static Analysis" engine to ensure zero-dependency reliability and data privacy.
+
+---
 
 Request Example (cURL)
 Bash
