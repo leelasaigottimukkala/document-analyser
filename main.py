@@ -5,6 +5,12 @@ from fastapi import FastAPI, Header, HTTPException, Request
 from pydantic import BaseModel
 from processor import extract_text
 from analyzer import analyze_document_content
+from fastapi.responses import RedirectResponse
+
+@app.api_route("/", methods=["GET", "POST", "PUT", "DELETE"])
+async def root_redirect(request: Request):
+    # This catches any request to the base URL and sends it to the correct path
+    return RedirectResponse(url="/api/document-analyze", status_code=307)
 
 app = FastAPI()
 
