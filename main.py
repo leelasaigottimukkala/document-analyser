@@ -1,46 +1,59 @@
 import os
-import shutil
-from fastapi import FastAPI, UploadFile, File, HTTPException
+import base64
+import uuid
+from fastapi import FastAPI, Header, HTTPException, Request
+from pydantic import BaseModel
 from processor import extract_text
 from analyzer import analyze_document_content
 
-app = FastAPI(title="Local Document Analyser")
+app = FastAPI()
 
-@app.get("/")
-def read_root():
-    return {"status": "Online", "mode": "Local NLP (No API Key)"}
+# 1. SECRET KEY - Change this or set in Render Environment
+API_KEY = "sk_track2_987654321"
 
-@app.post("/process-document")
-async def process_document(file: UploadFile = File(...)):
-    # 1. Basic validation
-    extension = os.path.splitext(file.filename)[1].lower()
-    if extension not in [".pdf", ".docx"]:
-        raise HTTPException(status_code=400, detail="Only .pdf and .docx supported")
+class DocumentRequest(BaseModel):
+    fileName: str
+    fileType: str
+    fileBase64: str
 
-    # 2. Save file temporarily
-    temp_path = f"temp_{file.filename}"
+@app.post("/api/document-analyze")
+async def analyze_document(request: DocumentRequest, x_api_key: str = Header(None)):
+    # 1. API Key Validation (Requirement 6)
+    if x_api_key != API_KEY:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    # 2. Decode Base64 (Requirement 5)
     try:
-        with open(temp_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-
-        # 3. Extract Text
-        raw_text = extract_text(temp_path, extension)
+        file_content = base64.b64decode(request.fileBase64)
+        temp_filename = f"{uuid.uuid4()}_{request.fileName}"
         
-        if not raw_text or len(raw_text.strip()) < 5:
-            return {"filename": file.filename, "error": "Document appears to be empty or unreadable."}
+        with open(temp_filename, "wb") as f:
+            f.write(file_content)
 
-        # 4. Analyze Text (Local NLP)
+        # 3. Extract & Analyze
+        extension = f".{request.fileType.lower()}"
+        raw_text = extract_text(temp_filename, extension)
         analysis = analyze_document_content(raw_text)
 
+        os.remove(temp_filename) # Cleanup
+
+        # 4. Final Response Format (Requirement 9)
         return {
-            "filename": file.filename,
-            "analysis": analysis
+            "status": "success",
+            "fileName": request.fileName,
+            "summary": analysis["summary"],
+            "entities": {
+                "names": analysis["names"],
+                "dates": analysis["dates"],
+                "organizations": analysis["organizations"],
+                "amounts": analysis["amounts"]
+            },
+            "sentiment": analysis["sentiment"]
         }
 
     except Exception as e:
-        return {"error": str(e)}
-    
-    finally:
-        # Cleanup
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+        return {"status": "error", "message": str(e)}
+
+@app.get("/")
+def health():
+    return {"status": "active", "endpoint": "/api/document-analyze"}
