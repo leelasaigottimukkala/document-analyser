@@ -13,7 +13,7 @@ from fastapi.responses import RedirectResponse
 app = FastAPI()
 @app.api_route("/", methods=["GET", "POST", "PUT", "DELETE"])
 async def root_redirect(request: Request):
-    return RedirectResponse(url="/", status_code=307) 
+    return RedirectResponse(url="/api/document-analyze", status_code=307) 
 
 
 
