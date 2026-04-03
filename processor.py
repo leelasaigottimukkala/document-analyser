@@ -1,22 +1,14 @@
-import pytesseract
-from PIL import Image
-import docx2txt
 import fitz  # PyMuPDF
-import os
-
-# Optional: Mac/Linux path
-if os.name == "posix":
-    pytesseract.pytesseract.tesseract_cmd = "/opt/homebrew/bin/tesseract"
-
+import docx2txt
 
 def clean_text(text):
+    if not text:
+        return ""
     return " ".join(text.split())
-
 
 def extract_text(file_path, extension):
     try:
         text = ""
-
         if extension == ".pdf":
             doc = fitz.open(file_path)
             for page in doc:
@@ -26,12 +18,8 @@ def extract_text(file_path, extension):
         elif extension == ".docx":
             text = docx2txt.process(file_path)
 
-        elif extension in [".jpg", ".jpeg", ".png"]:
-            image = Image.open(file_path).convert("L")
-            text = pytesseract.image_to_string(image, config="--psm 6")
-
         else:
-            return ""
+            return "Unsupported file format for this engine."
 
         return clean_text(text)
 
